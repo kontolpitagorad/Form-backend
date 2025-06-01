@@ -1,14 +1,28 @@
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
 const path = require("path");
+const fs = require("fs");
+const unzipper = require("unzipper");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+// Ekstrak public.zip jika folder public belum ada
+const publicPath = path.join(__dirname, "public");
+const zipPath = path.join(__dirname, "public.zip");
 
+if (!fs.existsSync(publicPath) && fs.existsSync(zipPath)) {
+  fs.createReadStream(zipPath)
+    .pipe(unzipper.Extract({ path: publicPath }))
+    .on("close", () => console.log("✅ public.zip berhasil diekstrak."));
+}
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(publicPath));
+
+// Route POST
 app.post("/submit", (req, res) => {
   const formData = req.body;
   const nextPage = formData.next || "/halaman4.html";
@@ -43,6 +57,7 @@ app.post("/submit", (req, res) => {
   });
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`Server berjalan di port ${PORT}`);
 });
